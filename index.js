@@ -26,11 +26,13 @@ async function run() {
     const userCollection = client.db("contestHub").collection("users");
     const registrationCollection = client.db("contestHub").collection("registrations");
 
+
+
     app.get('/approved-contests', async (req, res) => {
       const type = req.query.type;
       const limit = parseInt(req.query.limit) || 10;
       const skip = parseInt(req.query.skip) || 0;
-      
+
       let query = { status: "confirmed" };
       if (type && type !== "All") {
         query.contestType = type;
@@ -108,38 +110,71 @@ async function run() {
       }
     });
 
-    app.post('/registrations', async (req, res) => {
-      const { contestId, userName, userEmail, price, paymentStatus } = req.body;
-
-      if (!contestId || !userName || !userEmail || !price) {
-        return res.status(400).send({ message: "Missing required fields" });
-      }
-
-      const registrationData = {
-        contestId: new ObjectId(contestId),
-        userName,
-        userEmail,
-        price,
-        paymentStatus: paymentStatus || "Pending", 
-        createdAt: new Date(),
-      };
-
+    app.get('/registrations', async (req, res) => {
       try {
-        const contest = await contestCollection.findOne({ _id: new ObjectId(contestId) });
-        if (!contest) {
-          return res.status(404).send({ message: "Contest not found" });
-        }
+        const result = await registrationCollection.find({}).toArray();
+        res.status(200).send(result);
+      } catch (error) {
+        res.status(500).send({ message: "Error fetching registrations" });
+      }
+    });
+
+    app.post('/registrations', async (req, res) => {
+      try {
+        const registrationData = req.body;
+
+        registrationData.registeredAt = new Date();
 
         const result = await registrationCollection.insertOne(registrationData);
-        res.status(201).send({ message: "Registration successful", registrationId: result.insertedId });
+
+        await contestCollection.updateOne(
+          { _id: new ObjectId(registrationData.contestId) },
+          { $inc: { participantsCount: 1 } }
+        );
+
+        res.status(201).send(result);
       } catch (error) {
-        res.status(500).send({ message: "Error registering for the contest" });
+        console.error('Error saving registration:', error);
+        res.status(500).send({ message: "Failed to register for contest" });
+      }
+    });
+
+    app.patch('/registrations/:id', async (req, res) => {
+      const { id } = req.params;
+      const { submissionText } = req.body;
+
+      if (!submissionText) {
+        return res.status(400).send({ message: 'Submission text is required' });
+      }
+
+      try {
+        const result = await registrationCollection.updateOne(
+          { _id: new ObjectId(id) },
+          {
+            $push: {
+              submissions: {
+                submissionText,
+                submittedAt: new Date(),
+              }
+            }
+          }
+        );
+
+        if (result.modifiedCount === 0) {
+          return res.status(404).send({ message: 'Registration not found or no changes made' });
+        }
+
+        res.status(200).send({ message: 'Task submission successful' });
+      } catch (error) {
+        console.error('Error updating registration:', error);
+        res.status(500).send({ message: 'Error submitting task' });
       }
     });
 
     console.log("MongoDB connected successfully");
-  } finally {}
+  } finally { }
 }
+
 run().catch(console.dir);
 
 app.get('/', (req, res) => {
