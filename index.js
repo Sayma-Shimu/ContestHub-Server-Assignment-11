@@ -24,6 +24,7 @@ async function run() {
     await client.connect();
     const contestCollection = client.db("contestHub").collection("contestUser");
     const userCollection = client.db("contestHub").collection("users");
+    const registrationCollection = client.db("contestHub").collection("registrations");
 
     app.get('/approved-contests', async (req, res) => {
       const type = req.query.type;
@@ -104,6 +105,35 @@ async function run() {
         res.status(200).send(result);
       } catch (error) {
         res.status(500).send({ message: "Error fetching users" });
+      }
+    });
+
+    app.post('/registrations', async (req, res) => {
+      const { contestId, userName, userEmail, price, paymentStatus } = req.body;
+
+      if (!contestId || !userName || !userEmail || !price) {
+        return res.status(400).send({ message: "Missing required fields" });
+      }
+
+      const registrationData = {
+        contestId: new ObjectId(contestId),
+        userName,
+        userEmail,
+        price,
+        paymentStatus: paymentStatus || "Pending", 
+        createdAt: new Date(),
+      };
+
+      try {
+        const contest = await contestCollection.findOne({ _id: new ObjectId(contestId) });
+        if (!contest) {
+          return res.status(404).send({ message: "Contest not found" });
+        }
+
+        const result = await registrationCollection.insertOne(registrationData);
+        res.status(201).send({ message: "Registration successful", registrationId: result.insertedId });
+      } catch (error) {
+        res.status(500).send({ message: "Error registering for the contest" });
       }
     });
 
