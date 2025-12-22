@@ -168,6 +168,21 @@ async function run() {
       }
     });
 
+    app.patch('/users/role/:id', async (req, res) => {
+      const id = req.params.id;
+      const { role } = req.body;
+      const filter = { _id: new ObjectId(id) };
+      const updateDoc = {
+        $set: { role: role },
+      };
+      try {
+        const result = await userCollection.updateOne(filter, updateDoc);
+        res.send(result);
+      } catch (error) {
+        res.status(500).send({ message: "Failed to update role" });
+      }
+    });
+
     app.patch('/users/:email', async (req, res) => {
       const email = req.params.email;
       const { name, photo, bio, address } = req.body;
