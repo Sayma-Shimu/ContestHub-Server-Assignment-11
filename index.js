@@ -64,6 +64,28 @@ async function run() {
       }
     });
 
+    app.get('/contests/creator/:email', async (req, res) => {
+      const email = req.params.email;
+      const query = { creatorEmail: email };
+      try {
+        const result = await contestCollection.find(query).toArray();
+        res.send(result);
+      } catch (error) {
+        res.status(500).send({ message: "Error fetching contests" });
+      }
+    });
+
+    app.delete('/contests/:id', async (req, res) => {
+      const id = req.params.id;
+      try {
+        const query = { _id: new ObjectId(id) };
+        const result = await contestCollection.deleteOne(query);
+        res.send(result);
+      } catch (error) {
+        res.status(500).send({ message: "Error deleting contest" });
+      }
+    });
+
     app.get('/approved-contests', async (req, res) => {
       const type = req.query.type;
       const limit = parseInt(req.query.limit) || 10;
