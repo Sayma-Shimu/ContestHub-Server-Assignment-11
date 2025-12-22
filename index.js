@@ -146,6 +146,32 @@ async function run() {
       }
     });
 
+    app.patch('/contests/:id', async (req, res) => {
+      const id = req.params.id;
+      const updatedData = req.body;
+      const filter = { _id: new ObjectId(id) };
+
+      const updateDoc = {
+        $set: {
+          name: updatedData.name,
+          image: updatedData.image,
+          description: updatedData.description,
+          taskInstruction: updatedData.taskInstruction,
+          contestType: updatedData.contestType,
+          price: parseFloat(updatedData.price),
+          prizeMoney: parseFloat(updatedData.prizeMoney),
+          deadline: updatedData.deadline,
+        },
+      };
+
+      try {
+        const result = await contestCollection.updateOne(filter, updateDoc);
+        res.send(result);
+      } catch (error) {
+        res.status(500).send({ message: "Failed to update contest" });
+      }
+    });
+
     app.get('/popular-contests', async (req, res) => {
       try {
         const result = await contestCollection
