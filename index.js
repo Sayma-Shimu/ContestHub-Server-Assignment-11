@@ -27,6 +27,42 @@ async function run() {
     const registrationCollection = client.db("contestHub").collection("registrations");
 
 
+    app.post('/contests', async (req, res) => {
+      const contestData = req.body;
+
+      const newContest = {
+        name: contestData.name,
+        image: contestData.image,
+        description: contestData.description,
+        taskInstruction: contestData.taskInstruction,
+        contestType: contestData.contestType,
+        price: parseFloat(contestData.price),
+        prizeMoney: parseFloat(contestData.prizeMoney),
+        deadline: contestData.deadline,
+        creatorEmail: contestData.creatorEmail,
+        status: "pending",
+        participantsCount: 0,
+        winner: null,
+        winnerPhoto: null,
+        createdAt: new Date().toISOString().split('T')[0]
+      };
+
+      try {
+        const result = await contestCollection.insertOne(newContest);
+        res.status(201).send(result);
+      } catch (error) {
+        res.status(500).send({ message: "Failed to add contest" });
+      }
+    });
+
+    app.get('/contests', async (req, res) => {
+      try {
+        const result = await contestCollection.find().toArray();
+        res.send(result);
+      } catch (error) {
+        res.status(500).send({ message: "Error fetching all contests" });
+      }
+    });
 
     app.get('/approved-contests', async (req, res) => {
       const type = req.query.type;
@@ -111,25 +147,25 @@ async function run() {
     });
 
     app.patch('/users/:email', async (req, res) => {
-    const email = req.params.email;
-    const { name, photo, bio, address } = req.body;
-    
-    try {
+      const email = req.params.email;
+      const { name, photo, bio, address } = req.body;
+
+      try {
         const filter = { email: email };
         const updateDoc = {
-            $set: {
-                name: name,
-                photo: photo,
-                bio: bio,       
-                address: address 
-            },
+          $set: {
+            name: name,
+            photo: photo,
+            bio: bio,
+            address: address
+          },
         };
         const result = await userCollection.updateOne(filter, updateDoc);
         res.send(result);
-    } catch (error) {
+      } catch (error) {
         res.status(500).send({ message: "Error updating user" });
-    }
-});
+      }
+    });
 
     app.get('/registrations', async (req, res) => {
       try {
