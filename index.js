@@ -131,6 +131,21 @@ async function run() {
       }
     });
 
+    app.patch('/contests/status/:id', async (req, res) => {
+      const id = req.params.id;
+      const { status } = req.body;
+      const filter = { _id: new ObjectId(id) };
+      const updateDoc = {
+        $set: { status: status },
+      };
+      try {
+        const result = await contestCollection.updateOne(filter, updateDoc);
+        res.send(result);
+      } catch (error) {
+        res.status(500).send({ message: "Failed to update contest status" });
+      }
+    });
+
     app.get('/popular-contests', async (req, res) => {
       try {
         const result = await contestCollection
@@ -230,6 +245,35 @@ async function run() {
       } catch (error) {
         console.error('Error saving registration:', error);
         res.status(500).send({ message: "Failed to register for contest" });
+      }
+    });
+
+    app.patch('/contests/winner/:id', async (req, res) => {
+      const id = req.params.id;
+      const { winnerName, winnerPhoto } = req.body;
+      const filter = { _id: new ObjectId(id) };
+      const updateDoc = {
+        $set: {
+          winner: winnerName,
+          winnerPhoto: winnerPhoto,
+        },
+      };
+      try {
+        const result = await contestCollection.updateOne(filter, updateDoc);
+        res.send(result);
+      } catch (error) {
+        res.status(500).send({ message: "Failed to declare winner" });
+      }
+    });
+
+    app.get('/submissions/:contestId', async (req, res) => {
+      const id = req.params.contestId;
+      const query = { contestId: id };
+      try {
+        const result = await registrationCollection.find(query).toArray();
+        res.send(result);
+      } catch (error) {
+        res.status(500).send({ message: "Error fetching submissions" });
       }
     });
 
