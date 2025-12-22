@@ -110,6 +110,27 @@ async function run() {
       }
     });
 
+    app.patch('/users/:email', async (req, res) => {
+    const email = req.params.email;
+    const { name, photo, bio, address } = req.body;
+    
+    try {
+        const filter = { email: email };
+        const updateDoc = {
+            $set: {
+                name: name,
+                photo: photo,
+                bio: bio,       
+                address: address 
+            },
+        };
+        const result = await userCollection.updateOne(filter, updateDoc);
+        res.send(result);
+    } catch (error) {
+        res.status(500).send({ message: "Error updating user" });
+    }
+});
+
     app.get('/registrations', async (req, res) => {
       try {
         const result = await registrationCollection.find({}).toArray();
