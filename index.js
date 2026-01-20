@@ -303,6 +303,37 @@ async function run() {
       }
     });
 
+
+    //  Dashboard Overview Stats
+    app.get('/dashboard-stats', async (req, res) => {
+      try {
+        const totalUsers = await userCollection.countDocuments();
+        const totalContests = await contestCollection.countDocuments();
+        const approvedContests = await contestCollection.countDocuments({ status: "confirmed" });
+        const pendingContests = await contestCollection.countDocuments({ status: "pending" });
+        const totalRegistrations = await registrationCollection.countDocuments();
+
+        const popularContests = await contestCollection
+          .find({ status: "confirmed" })
+          .sort({ participantsCount: -1 })
+          .limit(5)
+          .toArray();
+
+        res.send({
+          totalUsers,
+          totalContests,
+          approvedContests,
+          pendingContests,
+          totalRegistrations,
+          popularContests
+        });
+      } catch (error) {
+        res.status(500).send({ message: "Failed to load dashboard stats" });
+      }
+    });
+
+
+
     app.patch('/registrations/:id', async (req, res) => {
       const { id } = req.params;
       const { submissionText } = req.body;
